@@ -19,7 +19,8 @@ class CodeParser:
             "ts": "typescript",
             "tsx": "typescript",
             "php": "php",
-            "rb": "ruby"
+            "rb": "ruby",
+            "go": "go"
         }
         if file_extensions is None:
             self.language_names = []
@@ -57,7 +58,7 @@ class CodeParser:
 
                 try:
                     build_path = os.path.join(self.CACHE_DIR, f"build/{language}.so")
-                    
+
                     # Special handling for TypeScript
                     if language == 'typescript':
                         ts_dir = os.path.join(repo_path, 'typescript')
@@ -74,7 +75,7 @@ class CodeParser:
                             raise FileNotFoundError(f"PHP directory not found in {repo_path}")
                     else:
                         Language.build_library(build_path, [repo_path])
-                    
+
                     self.languages[language] = Language(build_path, language)
                     logging.info(f"Successfully built and loaded {language} parser")
                 except Exception as e:
@@ -177,6 +178,12 @@ class CodeParser:
                 'module': 'Module',
                 'singleton_class': 'Singleton Class',
                 'begin': 'Begin Block',
+            },
+             'go': {
+                'function_declaration': 'Function',
+                'method_declaration': 'Method',
+                'struct_type': 'Struct',
+                'interface_type': 'Interface',
             }
         }
 
@@ -188,7 +195,7 @@ class CodeParser:
             return node_types["ts"]
         else:
             raise ValueError("Unsupported file type")
-        
+
 
     def _get_nodes_for_comments(self, file_extension: str) -> Dict[str, str]:
         node_types = {
@@ -213,6 +220,9 @@ class CodeParser:
             },
             'rb': {
                 'comment': 'Comment',
+            },
+            'go': {
+                'comment': 'Comment',
             }
         }
 
@@ -224,7 +234,7 @@ class CodeParser:
             return node_types["ts"]
         else:
             raise ValueError("Unsupported file type")
-        
+
     def extract_comments(self, node: Node, file_extension: str) -> List[Tuple[Node, str]]:
         node_types_of_interest = self._get_nodes_for_comments(file_extension)
 
@@ -257,7 +267,7 @@ class CodeParser:
         line_numbers_with_type_of_interest = {}
 
         for node, type_of_interest in points_of_interest:
-            start_line = node.start_point[0] 
+            start_line = node.start_point[0]
             if type_of_interest not in line_numbers_with_type_of_interest:
                 line_numbers_with_type_of_interest[type_of_interest] = []
 
@@ -290,7 +300,7 @@ class CodeParser:
         line_numbers_with_comments = {}
 
         for node, type_of_interest in comments:
-            start_line = node.start_point[0] 
+            start_line = node.start_point[0]
             if type_of_interest not in line_numbers_with_comments:
                 line_numbers_with_comments[type_of_interest] = []
 
@@ -343,4 +353,3 @@ class CodeParser:
             self.map_line_to_node_type(child, line_to_node_type, depth + 1)
 
         return line_to_node_type
-    
